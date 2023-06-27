@@ -12,18 +12,17 @@ import os
 
 # Sidebar contents
 with st.sidebar:
-    st.title('Test PE Search App')
+    st.title('Demo of LLM semantic search')
+    add_vertical_space(3)
     st.markdown('''
-    ## Simple search of 10-Ks and 10-Qs
+    ### Made by Alex Casella
     ''')
-    add_vertical_space(5)
-    st.write('Made by Alex Casella')
 
 # Main page contents
 def main():
     load_dotenv()
 
-    st.header("Search input")
+    st.header("Simple search of 10-Ks and 10-Qs")
 
     pdf = st.file_uploader("Upload a PDF file", type=["pdf"])
     
@@ -32,14 +31,6 @@ def main():
         pdf_reader = PdfReader(pdf)
         # Get rid of .pdf from name
         store_file_name = pdf.name[:-4]
-       
-        text = ""
-        for page in pdf_reader.pages:
-            text += page.extract_text()
-        
-        # Use langchain to split into chunks
-        splitter = RecursiveCharacterTextSplitter(separators=[".", ",", "\n"], chunk_size=1000, chunk_overlap=100)
-        chunks = splitter.split_text(text=text)
 
         if os.path.exists(f"{store_file_name}.pk1"):
             # read the file
@@ -48,22 +39,34 @@ def main():
 
             st.write('File already exists, loaded embeddings from disk')
         else:
+            text = ""
+            for page in pdf_reader.pages:
+                text += page.extract_text()
+            
+            # Use langchain to split into chunks
+            splitter = RecursiveCharacterTextSplitter(["\n\n", "\n", ".", ","], chunk_size=1000, chunk_overlap=100)
+            chunks = splitter.split_text(text=text)
+            # st.write("Chunk:")
+            st.write("File broken into chunks: ", len(chunks))
+            # st.write(chunks)
+
             # Embed chunks
             embeddings = OpenAIEmbeddings()
 
             # Create vector store using Meta's FAISS store
             vectorStore = FAISS.from_texts(chunks, embedding=embeddings)
+            num_vectors = vectorStore.index.ntotal
+            st.write(f"New file, created vector store with {num_vectors} vectors")
 
             with open(f"{store_file_name}.pk1", "wb") as f:
                 pickle.dump(vectorStore, f)
             
-            st.write('New, created vector store')
-
         # Take in search query
         query = st.text_input("Search for:")
         if query:
             # Get top results
-            docs = vectorStore.similarity_search(query=query, k=5)
+            k = 5
+            docs = vectorStore.similarity_search(query=query, k=k)
 
             # Ask LLM to give final result
             llm = OpenAI(temperature=0)
@@ -72,8 +75,9 @@ def main():
             st.write("Answer:")
             st.write(response)
 
-            st.write("Top results:")
-            st.write(docs)
+            st.write(f"Top {k} results:")
+            cleaned_docs = [doc.page_content.replace('\n', ' ') for doc in docs]
+            st.write(cleaned_docs)
 
 
 if __name__ == "__main__":
