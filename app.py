@@ -76,7 +76,7 @@ def create_vector_store_from_pdf(pdf):
             st.write(chunks)
 
             # Embed chunks
-            embeddings = OpenAIEmbeddings()
+            embeddings = OpenAIEmbeddings(model="chatgpt-3.5-turbo")
 
             # Create vector store using Meta's FAISS store
             vectorStore = FAISS.from_texts(chunks, embedding=embeddings)
