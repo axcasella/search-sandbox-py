@@ -14,14 +14,6 @@ from langchain.prompts import (SystemMessagePromptTemplate, HumanMessagePromptTe
 import pickle
 import os
 
-# Sidebar contents
-# with st.sidebar:
-#     st.title('Demo of LLM semantic search')
-#     add_vertical_space(3)
-#     st.markdown('''
-#     ### Made by Alex Casella
-#     ''')
-
 # Main page contents
 def main():
     load_dotenv()
@@ -90,7 +82,7 @@ def get_response_from_query(db, query, k=3):
     docs_page_content = " ".join([doc.page_content for doc in docs])
 
     # Ask LLM to give final result
-    llm = OpenAI(model_name="gpt-3.5-turbo", temperature=0.2)
+    llm = OpenAI(model_name="gpt-3.5-turbo", temperature=0.2, max_tokens=3000)
 
     system_template = """
         Only use factual information from the document {docs}.
