@@ -160,3 +160,8 @@ cython_debug/
 #.idea/
 
 *.pk1
+
+data/out/
+documents/
+
+.DS_Store
